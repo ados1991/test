@@ -14,3 +14,6 @@
 [a-zA-Z0-9]+ – At least one alphanumeric character after the second slash.
 
 (?<!/)$ – Asserts the string does not end with a slash.
+
+
+Currently, version 1.0.2 of the migration tool is available on the marketplace. In this version, only secrets migration is supported; role migration is not yet available. However, role migration will be supported starting from version 1.0.3 on the marketplace.
