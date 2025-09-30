@@ -1,1 +1,16 @@
 ^(?!/)(?!.*//)[a-zA-Z0-9]*\/[a-zA-Z0-9]+\/[a-zA-Z0-9]+(?<!/)$
+(?!/) – Asserts the string does not start with a slash.
+
+(?!.*//) – Asserts the string does not contain two slashes in a row (prevents consecutive slashes).
+
+[a-zA-Z0-9]* – Matches any number of alphanumeric characters before the first slash.
+
+\/ – Matches a single slash.
+
+[a-zA-Z0-9]+ – At least one alphanumeric character between the two slashes.
+
+\/ – Second slash.
+
+[a-zA-Z0-9]+ – At least one alphanumeric character after the second slash.
+
+(?<!/)$ – Asserts the string does not end with a slash.
