@@ -1,0 +1,100 @@
+import argparse
+import json
+import os
+import sys
+
+CACHE_FILE = "apcode_cache.json"
+
+def load_cache():
+    """Load cache file if exists, else return empty dict."""
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_cache(data):
+    """Save data to cache file."""
+    with open(CACHE_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="APCODE Parser for Business Owner and IT Responsible"
+    )
+
+    # Main APCODE key
+    parser.add_argument("--apcode", required=True, help="APCODE identifier")
+
+    # Get mode
+    parser.add_argument(
+        "--get",
+        action="store_true",
+        help="Retrieve data for given APCODE (no modifications)"
+    )
+
+    # Business Owner args
+    parser.add_argument("--bo-uid", help="Business Owner UID")
+    parser.add_argument("--bo-firstname", help="Business Owner First Name")
+    parser.add_argument("--bo-lastname", help="Business Owner Last Name")
+
+    # IT Responsible args
+    parser.add_argument("--it-uid", help="IT Responsible UID")
+    parser.add_argument("--it-firstname", help="IT Responsible First Name")
+    parser.add_argument("--it-lastname", help="IT Responsible Last Name")
+
+    # Overwrite flag (boolean)
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Allow overwriting an existing APCODE entry (default: False)"
+    )
+
+    args = parser.parse_args()
+    cache = load_cache()
+
+    # === GET MODE ===
+    if args.get:
+        if args.apcode not in cache:
+            print(f"❌ Error: APCODE '{args.apcode}' not found in cache.")
+            sys.exit(1)
+        print(f"✅ Retrieved data for APCODE '{args.apcode}':")
+        print(json.dumps(cache[args.apcode], indent=4))
+        return
+
+    # === STORE/UPDATE MODE ===
+    # Check all required fields are provided
+    required_fields = [
+        args.bo_uid, args.bo_firstname, args.bo_lastname,
+        args.it_uid, args.it_firstname, args.it_lastname
+    ]
+    if not all(required_fields):
+        print("❌ Error: Missing required fields. Provide all BO and IT arguments, or use --get mode.")
+        sys.exit(1)
+
+    if args.apcode in cache and not args.overwrite:
+        print(f"❌ Error: APCODE '{args.apcode}' already exists. Use --overwrite to replace it.")
+        sys.exit(1)
+
+    # Build data structure
+    apcode_data = {
+        "business_owner": {
+            "uid": args.bo_uid,
+            "firstname": args.bo_firstname,
+            "lastname": args.bo_lastname,
+        },
+        "it_responsible": {
+            "uid": args.it_uid,
+            "firstname": args.it_firstname,
+            "lastname": args.it_lastname,
+        }
+    }
+
+    cache[args.apcode] = apcode_data
+    save_cache(cache)
+
+    action = "Overwritten" if args.overwrite else "Stored"
+    print(f"✅ {action} data under APCODE '{args.apcode}'")
+    print(json.dumps(apcode_data, indent=4))
+
+if __name__ == "__main__":
+    main()
