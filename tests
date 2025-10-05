@@ -1,100 +1,13 @@
+
 import argparse
-import json
-import os
-import sys
 
-CACHE_FILE = "atae_cache.json"
+parser = argparse.ArgumentParser(description="Example: filter by completion status")
 
-def load_cache():
-    """Load cache file if exists, else return empty dict."""
-    if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "r") as f:
-            return json.load(f)
-    return {}
+parser.add_argument(
+    "--status",
+    choices=["complete", "nocomplete", "all"],
+    default="all",
+    help="Filter results by status: 'complete', 'nocomplete', or 'all' (default: all)"
+)
 
-def save_cache(data):
-    """Save data to cache file."""
-    with open(CACHE_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="atae Parser for Business Owner and IT Responsible"
-    )
-
-    # Main atae key
-    parser.add_argument("--atae", required=True, help="atae identifier")
-
-    # Get mode
-    parser.add_argument(
-        "--get",
-        action="store_true",
-        help="Retrieve data for given atae (no modifications)"
-    )
-
-
-    parser.add_argument("--bo-uid", help="Business Owner UID")
-    parser.add_argument("--bo-firstname", help="Business Owner First Name")
-    parser.add_argument("--bo-lastname", help="Business Owner Last Name")
-
-
-    parser.add_argument("--it-uid", help="IT Responsible UID")
-    parser.add_argument("--it-firstname", help="IT Responsible First Name")
-    parser.add_argument("--it-lastname", help="IT Responsible Last Name")
-
-
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Allow overwriting an existing atae entry (default: False)"
-    )
-
-    args = parser.parse_args()
-    cache = load_cache()
-
-    # === GET MODE ===
-    if args.get:
-        if args.atae not in cache:
-            print(f"❌ Error: atae '{args.atae}' not found in cache.")
-            sys.exit(1)
-        print(f"✅ Retrieved data for atae '{args.atae}':")
-        print(json.dumps(cache[args.atae], indent=4))
-        return
-
-    # === STORE/UPDATE MODE ===
-    # Check all required fields are provided
-    required_fields = [
-        args.bo_uid, args.bo_firstname, args.bo_lastname,
-        args.it_uid, args.it_firstname, args.it_lastname
-    ]
-    if not all(required_fields):
-        print("❌ Error: Missing required fields. Provide all BO and IT arguments, or use --get mode.")
-        sys.exit(1)
-
-    if args.atae in cache and not args.overwrite:
-        print(f"❌ Error: atae '{args.atae}' already exists. Use --overwrite to replace it.")
-        sys.exit(1)
-
-    # Build data structure
-    atae_data = {
-        "business_owner": {
-            "uid": args.bo_uid,
-            "firstname": args.bo_firstname,
-            "lastname": args.bo_lastname,
-        },
-        "it_responsible": {
-            "uid": args.it_uid,
-            "firstname": args.it_firstname,
-            "lastname": args.it_lastname,
-        }
-    }
-
-    cache[args.atae] = atae_data
-    save_cache(cache)
-
-    action = "Overwritten" if args.overwrite else "Stored"
-    print(f"✅ {action} data under atae '{args.atae}'")
-    print(json.dumps(atae_data, indent=4))
-
-if __name__ == "__main__":
-    main()
+args = parser.parse_args()
