@@ -3,7 +3,7 @@ import json
 import os
 import sys
 
-CACHE_FILE = "apcode_cache.json"
+CACHE_FILE = "atae_cache.json"
 
 def load_cache():
     """Load cache file if exists, else return empty dict."""
@@ -19,34 +19,34 @@ def save_cache(data):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="APCODE Parser for Business Owner and IT Responsible"
+        description="atae Parser for Business Owner and IT Responsible"
     )
 
-    # Main APCODE key
-    parser.add_argument("--apcode", required=True, help="APCODE identifier")
+    # Main atae key
+    parser.add_argument("--atae", required=True, help="atae identifier")
 
     # Get mode
     parser.add_argument(
         "--get",
         action="store_true",
-        help="Retrieve data for given APCODE (no modifications)"
+        help="Retrieve data for given atae (no modifications)"
     )
 
-    # Business Owner args
+
     parser.add_argument("--bo-uid", help="Business Owner UID")
     parser.add_argument("--bo-firstname", help="Business Owner First Name")
     parser.add_argument("--bo-lastname", help="Business Owner Last Name")
 
-    # IT Responsible args
+
     parser.add_argument("--it-uid", help="IT Responsible UID")
     parser.add_argument("--it-firstname", help="IT Responsible First Name")
     parser.add_argument("--it-lastname", help="IT Responsible Last Name")
 
-    # Overwrite flag (boolean)
+
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Allow overwriting an existing APCODE entry (default: False)"
+        help="Allow overwriting an existing atae entry (default: False)"
     )
 
     args = parser.parse_args()
@@ -54,11 +54,11 @@ def main():
 
     # === GET MODE ===
     if args.get:
-        if args.apcode not in cache:
-            print(f"❌ Error: APCODE '{args.apcode}' not found in cache.")
+        if args.atae not in cache:
+            print(f"❌ Error: atae '{args.atae}' not found in cache.")
             sys.exit(1)
-        print(f"✅ Retrieved data for APCODE '{args.apcode}':")
-        print(json.dumps(cache[args.apcode], indent=4))
+        print(f"✅ Retrieved data for atae '{args.atae}':")
+        print(json.dumps(cache[args.atae], indent=4))
         return
 
     # === STORE/UPDATE MODE ===
@@ -71,12 +71,12 @@ def main():
         print("❌ Error: Missing required fields. Provide all BO and IT arguments, or use --get mode.")
         sys.exit(1)
 
-    if args.apcode in cache and not args.overwrite:
-        print(f"❌ Error: APCODE '{args.apcode}' already exists. Use --overwrite to replace it.")
+    if args.atae in cache and not args.overwrite:
+        print(f"❌ Error: atae '{args.atae}' already exists. Use --overwrite to replace it.")
         sys.exit(1)
 
     # Build data structure
-    apcode_data = {
+    atae_data = {
         "business_owner": {
             "uid": args.bo_uid,
             "firstname": args.bo_firstname,
@@ -89,12 +89,12 @@ def main():
         }
     }
 
-    cache[args.apcode] = apcode_data
+    cache[args.atae] = atae_data
     save_cache(cache)
 
     action = "Overwritten" if args.overwrite else "Stored"
-    print(f"✅ {action} data under APCODE '{args.apcode}'")
-    print(json.dumps(apcode_data, indent=4))
+    print(f"✅ {action} data under atae '{args.atae}'")
+    print(json.dumps(atae_data, indent=4))
 
 if __name__ == "__main__":
     main()
