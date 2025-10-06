@@ -1,13 +1,25 @@
-
-import argparse
-
-parser = argparse.ArgumentParser(description="Example: filter by completion status")
-
-parser.add_argument(
-    "--status",
-    choices=["complete", "nocomplete", "all"],
-    default="all",
-    help="Filter results by status: 'complete', 'nocomplete', or 'all' (default: all)"
-)
-
-args = parser.parse_args()
+{
+  "processors": [
+    {
+      "set": {
+        "if": "ctx.path != null && /^(A[P]?[0-9]{3,10}\\/$)/.matcher(ctx.path).matches()",
+        "field": "prouv",
+        "value": "{{path}}"
+      }
+    },
+    {
+      "gsub": {
+        "if": "ctx.prouv != null",
+        "field": "prouv",
+        "pattern": "\\/$",
+        "replacement": ""
+      }
+    },
+    {
+      "lowercase": {
+        "if": "ctx.prouv != null",
+        "field": "prouv"
+      }
+    }
+  ]
+}
