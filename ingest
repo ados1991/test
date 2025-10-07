@@ -1,30 +1,37 @@
 PUT _ingest/pipeline/prouv_resolver
 {
-  "description": "Set 'prouv' based on path and env, with dev and qual using qual map, prod using prod map, with default fallback.",
+  "description": "Set bp.prouv based on json.request.namespace.path and bp.env with two-level lookup and default fallback.",
   "processors": [
     {
       "script": {
         "source": """
-          if (ctx.path != null && ctx.env != null) {
-            String p = ctx.path;
-            String env = ctx.env.toLowerCase();
+          if (
+            ctx.containsKey('json') &&
+            ctx.json.containsKey('request') &&
+            ctx.json.request.containsKey('namespace') &&
+            ctx.json.request.namespace.containsKey('path') &&
+            ctx.containsKey('bp') &&
+            ctx.bp.containsKey('env')
+          ) {
+            String p = ctx.json.request.namespace.path;
+            String env = ctx.bp.env.toLowerCase();
             String defaultValue = "ac123";
 
-            // Remove trailing slash
+            // Always remove trailing slash since path always ends with it
             String cleanPath = p.substring(0, p.length() - 1);
 
-            // CASE 1: ^A[P]?[0-9]{3,10}/$
+            // === CASE 1 ===  ^A[P]?[0-9]{3,10}/$
             if (p ==~ /^A[P]?[0-9]{3,10}\\/$/) {
-              ctx.prouv = cleanPath.toLowerCase();
+              ctx.bp.prouv = cleanPath.toLowerCase();
             }
 
-            // CASE 2: ^(?!/)(?!.*//)[a-zA-Z0-9]*/[a-zA-Z0-9]+/[a-zA-Z0-9]+/$
+            // === CASE 2 ===  ^(?!/)(?!.*//)[a-zA-Z0-9]*/[a-zA-Z0-9]+/[a-zA-Z0-9]+/$
             else if (p ==~ /^(?!\\/)(?!.*\\/\\/)[a-zA-Z0-9]*\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/$/) {
               String[] parts = cleanPath.split("/");
               if (parts.length >= 3) {
                 String lastPart = parts[parts.length - 1].toLowerCase();
 
-                // Lookup map: qual and prod
+                // Lookup map: 2-level (qual/prod)
                 Map lookup = [
                   "qual": [
                     "prod1": "qual_prod1_value",
@@ -36,20 +43,20 @@ PUT _ingest/pipeline/prouv_resolver
                   ]
                 ];
 
-                // Determine which top-level key to use
+                // dev and qual -> use "qual" map; prod -> use "prod" map
                 String topKey = (env.equals("prod") ? "prod" : "qual");
 
                 Map envMap = (Map) lookup.get(topKey);
                 if (envMap != null && envMap.containsKey(lastPart)) {
-                  ctx.prouv = envMap.get(lastPart);
+                  ctx.bp.prouv = envMap.get(lastPart);
                 } else {
-                  ctx.prouv = defaultValue;
+                  ctx.bp.prouv = defaultValue;
                 }
               } else {
-                ctx.prouv = defaultValue;
+                ctx.bp.prouv = defaultValue;
               }
             } else {
-              ctx.prouv = defaultValue;
+              ctx.bp.prouv = defaultValue;
             }
           }
         """
