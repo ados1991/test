@@ -8,6 +8,8 @@ USERNAME = "your_username"
 PASSWORD = "your_password"
 CACHE = {}  # simple in-memory cache
 TOKEN_EXPIRY = 9 * 60  # renew proactively before 10 min
+MAX_RETRIES = 5
+RETRY_DELAY = 3  # seconds between retries
 # -----------------------------------
 
 def get_token():
@@ -23,8 +25,7 @@ def get_token():
 def fetch_page(token, page):
     """Fetch one page with JWT token."""
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.get(DATA_URL, params={"page": page}, headers=headers)
-    return response
+    return requests.get(DATA_URL, params={"page": page}, headers=headers)
 
 def main():
     token, token_time = get_token()
@@ -41,36 +42,51 @@ def main():
             page += 1
             continue
 
-        response = fetch_page(token, page)
-        print(f"[INFO] Fetched page {page}: Status {response.status_code}")
+        retries = 0
+        while retries < MAX_RETRIES:
+            try:
+                response = fetch_page(token, page)
+                print(f"[INFO] Fetched page {page}: Status {response.status_code}")
 
-        if response.status_code == 200:
-            data = response.json()
+                if response.status_code == 200:
+                    data = response.json()
 
-            # Stop if empty
-            if not data:
-                print("[INFO] No more data. Stopping.")
-                break
+                    # Stop if empty
+                    if not data:
+                        print("[INFO] No more data. Stopping.")
+                        return
 
-            # Store in cache
-            CACHE[page] = data
-            print(f"[CACHE] Stored page {page}")
-            page += 1
+                    # Store in cache
+                    CACHE[page] = data
+                    print(f"[CACHE] Stored page {page}")
+                    page += 1
+                    break  # Exit retry loop — success
 
-        elif response.status_code in [401, 403]:
-            # Token expired or invalid — renew and retry
-            print(f"[WARN] Token expired or invalid at page {page}. Refreshing token...")
-            token, token_time = get_token()
-            # Do NOT increment page, retry same one
-            continue
+                elif response.status_code in [401, 403]:
+                    # Token expired or invalid — renew and retry
+                    print(f"[WARN] Token expired or invalid at page {page}. Refreshing token...")
+                    token, token_time = get_token()
+                    retries += 1
+                    continue
 
-        elif response.status_code == 404:
-            print("[INFO] Got 404. No more pages.")
-            break
+                elif response.status_code == 404:
+                    print("[INFO] Got 404. No more pages.")
+                    return
+
+                else:
+                    print(f"[ERROR] Unexpected status {response.status_code}: {response.text}")
+                    retries += 1
+                    time.sleep(RETRY_DELAY)
+
+            except requests.RequestException as e:
+                print(f"[ERROR] Network error on page {page}: {e}")
+                retries += 1
+                time.sleep(RETRY_DELAY)
 
         else:
-            print(f"[ERROR] Unexpected status {response.status_code}: {response.text}")
-            break
+            # Retries exceeded
+            print(f"[FATAL] Max retries reached for page {page}. Skipping this page.")
+            page += 1  # skip problematic page, continue
 
     print("[DONE] All pages processed.")
     print(f"Total cached pages: {len(CACHE)}")
