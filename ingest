@@ -1,0 +1,59 @@
+PUT _ingest/pipeline/prouv_resolver
+{
+  "description": "Set 'prouv' based on path and env, with dev and qual using qual map, prod using prod map, with default fallback.",
+  "processors": [
+    {
+      "script": {
+        "source": """
+          if (ctx.path != null && ctx.env != null) {
+            String p = ctx.path;
+            String env = ctx.env.toLowerCase();
+            String defaultValue = "ac123";
+
+            // Remove trailing slash
+            String cleanPath = p.substring(0, p.length() - 1);
+
+            // CASE 1: ^A[P]?[0-9]{3,10}/$
+            if (p ==~ /^A[P]?[0-9]{3,10}\\/$/) {
+              ctx.prouv = cleanPath.toLowerCase();
+            }
+
+            // CASE 2: ^(?!/)(?!.*//)[a-zA-Z0-9]*/[a-zA-Z0-9]+/[a-zA-Z0-9]+/$
+            else if (p ==~ /^(?!\\/)(?!.*\\/\\/)[a-zA-Z0-9]*\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/$/) {
+              String[] parts = cleanPath.split("/");
+              if (parts.length >= 3) {
+                String lastPart = parts[parts.length - 1].toLowerCase();
+
+                // Lookup map: qual and prod
+                Map lookup = [
+                  "qual": [
+                    "prod1": "qual_prod1_value",
+                    "prod2": "qual_prod2_value"
+                  ],
+                  "prod": [
+                    "prod1": "prod_prod1_value",
+                    "prod2": "prod_prod2_value"
+                  ]
+                ];
+
+                // Determine which top-level key to use
+                String topKey = (env.equals("prod") ? "prod" : "qual");
+
+                Map envMap = (Map) lookup.get(topKey);
+                if (envMap != null && envMap.containsKey(lastPart)) {
+                  ctx.prouv = envMap.get(lastPart);
+                } else {
+                  ctx.prouv = defaultValue;
+                }
+              } else {
+                ctx.prouv = defaultValue;
+              }
+            } else {
+              ctx.prouv = defaultValue;
+            }
+          }
+        """
+      }
+    }
+  ]
+}
