@@ -1,1 +1,43 @@
+def generate_nested_map_literal(mapping, varname="lookup",
+                                outer_indent_spaces=18, inner_indent_spaces=22):
+    """
+    Generate a string like:
+      Map lookup = [
+                        "key1": [
+                            "subkey1": "value1",
+                            "subkey2": "value2",
+                        ],
+                        "key2": [
+                            "subkeyA": "valueA",
+                            "subkeyB": "valueB",
+                        ],
+                    ];
+    """
+    outer_indent = " " * outer_indent_spaces
+    inner_indent = " " * inner_indent_spaces
+    lines = []
+    lines.append(f"Map {varname} = [")
 
+    for outer_key, inner_dict in mapping.items():
+        lines.append(f'{outer_indent}"{outer_key}": [')
+        for inner_key, inner_val in inner_dict.items():
+            lines.append(f'{inner_indent}"{inner_key}": "{inner_val}",')
+        lines.append(f'{outer_indent}],')
+    lines.append("              ];")  # closing bracket line
+    return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    data = {
+        "key1": {
+            "subkey1": "value1",
+            "subkey2": "value2"
+        },
+        "key2": {
+            "subkeyA": "valueA",
+            "subkeyB": "valueB"
+        }
+    }
+
+    result = generate_nested_map_literal(data)
+    print(result)
