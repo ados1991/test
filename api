@@ -1,3 +1,15 @@
 r"^\/(?:[^\/]+\/)*[^\/]+\/?$"
 r"^(secret|objsto|cloud)$"
 r"^(https?:\/\/)([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/[^\s]*)?\/?$"
+
+  if src_kv != dest_kv:
+      raise BadRequest(description="Source and destination KV engines must be identical.")
+
+  # --- Validation 2: Subpath vs final path ---
+  src_ends_with_slash = source_path.endswith('/')
+  dest_ends_with_slash = dest_path.endswith('/')
+
+  if src_ends_with_slash and not dest_ends_with_slash:
+      raise BadRequest(description="If the source path ends with '/', the destination path must also end with '/'.")
+  elif not src_ends_with_slash and dest_ends_with_slash:
+      raise BadRequest(description="If the source path does not end with '/', the destination path must not end with '/'.")
