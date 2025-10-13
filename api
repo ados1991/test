@@ -2,14 +2,75 @@ r"^\/(?:[^\/]+\/)*[^\/]+\/?$"
 r"^(secret|objsto|cloud)$"
 r"^(https?:\/\/)([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/[^\s]*)?\/?$"
 
-  if src_kv != dest_kv:
-      raise BadRequest(description="Source and destination KV engines must be identical.")
+from flask_restx import Resource, fields, Namespace
 
-  # --- Validation 2: Subpath vs final path ---
-  src_ends_with_slash = source_path.endswith('/')
-  dest_ends_with_slash = dest_path.endswith('/')
+api = Namespace('migration', description='Migration related operations')
 
-  if src_ends_with_slash and not dest_ends_with_slash:
-      raise BadRequest(description="If the source path ends with '/', the destination path must also end with '/'.")
-  elif not src_ends_with_slash and dest_ends_with_slash:
-      raise BadRequest(description="If the source path does not end with '/', the destination path must not end with '/'.")
+# Regex pattern: must start with /, support subpaths, may end with /
+PATH_PATTERN = r"^\/(?:[^\/]+\/)*[^\/]+\/?$"
+
+# Request model with built-in pattern validation
+migration_model = api.model('Migration', {
+    'src_kv': fields.String(
+        required=True,
+        description='Source KV engine (must match destination)',
+        example='secret'
+    ),
+    'dest_kv': fields.String(
+        required=True,
+        description='Destination KV engine (must match source)',
+        example='secret'
+    ),
+    'source_path': fields.String(
+        required=True,
+        description='Source secret path (must start with /, may contain subpaths, optional trailing /)',
+        pattern=PATH_PATTERN,
+        example='/abc/def/'
+    ),
+    'dest_path': fields.String(
+        required=True,
+        description='Destination secret path (must match source path structure)',
+        pattern=PATH_PATTERN,
+        example='/xyz/def/'
+    ),
+})
+
+
+@api.route('/migrate')
+class Migration(Resource):
+    @api.expect(migration_model)
+    def post(self):
+        data = request.get_json()
+
+        src_kv = data.get('src_kv')
+        dest_kv = data.get('dest_kv')
+        source_path = data.get('source_path')
+        dest_path = data.get('dest_path')
+
+        # --- Validation 1: KV must match ---
+        if src_kv != dest_kv:
+            api.abort(
+                400,
+                "Source and destination KV engines must be identical.",
+                errors={"src_kv": src_kv, "dest_kv": dest_kv}
+            )
+
+        # --- Validation 2: Slash consistency ---
+        src_ends_with_slash = source_path.endswith('/')
+        dest_ends_with_slash = dest_path.endswith('/')
+
+        if src_ends_with_slash and not dest_ends_with_slash:
+            api.abort(
+                400,
+                "If the source path ends with '/', the destination path must also end with '/'.",
+                errors={"source_path": source_path, "dest_path": dest_path}
+            )
+        elif not src_ends_with_slash and dest_ends_with_slash:
+            api.abort(
+                400,
+                "If the source path does not end with '/', the destination path must not end with '/'.",
+                errors={"source_path": source_path, "dest_path": dest_path}
+            )
+
+        # ✅ If all validations pass
+        return {"message": "Validation successful. Ready to proceed with migration."}, 200
