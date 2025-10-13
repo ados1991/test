@@ -1,1 +1,31 @@
 
+In the XXXXX space, we provide two dataviews:
+
+vaulthprod
+
+vaultprod
+
+These two dataviews allow you to search and analyze the logs of your activities on the Vault cluster, respectively for the qualification and production environments.
+
+The following dashboards are linked to these dataviews:
+
+[QUAL] Dashboard associated with the dataview vaulthprod
+
+[PROD] Dashboard associated with the dataview vaultprod
+
+Both dashboards include a common set of panels designed to help you analyze your logs, gain insights, and improve your Quality of Service (QoS).
+
+
+Who Has Access to the XXXXX Space?
+
+By default, the Business Owners, Technical IT, and the Support Group have access to the logs related to your apcode and its associated ecosystems.
+
+They hold Manager roles and can grant View permissions to users who do not yet have access to the apcode logs.
+
+🔹 How to Obtain Read Access to an Apcode or Ecosystem’s Logs
+
+To obtain read access, identify — for a given apcode — the Business Owner, the IT Lead, or a member of the Support Group, who can then add you as a viewer in this portal
+.
+
+The same process applies to ecosystems: you must identify the apcode owner of the ecosystem. You can find the apcode owner of your ecosystem in the reference directory available here
+, for example.
