@@ -4,6 +4,10 @@ r"^(?!/+$)(?!.*//)[^\s]+$" cannot contain /
 r"^(secret|objsto|cloud)$"
 r"^(https?:\/\/)([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/[^\s]*)?\/?$"
 
+
+if source_path == "/" and dest_path == "/":
+    abort(400, "Cannot copy from '/' to '/'")
+
 from flask_restx import Resource, fields, Namespace
 
 api = Namespace('migration', description='Migration related operations')
