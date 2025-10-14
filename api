@@ -6,7 +6,14 @@ r"^(https?:\/\/)([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/[^\s]*)?\/?$"
 
 
 if source_path == "/" and dest_path == "/":
-    abort(400, "Cannot copy from '/' to '/'")
+    abort(400, "Cannot copy from '/' to '/'.")
+
+# ❌ Rule: destination cannot be root "/"
+if dest_path == "/":
+    abort(400, "Destination path cannot be '/'.")
+
+^(?!\/$)\/(?:[^\/\s]+\/)*[^\/\s]*\/?$
+
 
 from flask_restx import Resource, fields, Namespace
 
