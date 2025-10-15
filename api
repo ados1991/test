@@ -93,3 +93,10 @@ class Migration(Resource):
 ^(?!\/$)\/(?:[^\/\s]+\/)*[^\/\s]*\/?$ — Same as above, but disallows the string / alone (so it can’t be just the root path).
 
 ^[0-9A-Z_-]+/[0-9A-Z_-]+/EC002I[0-9]{6}$ — Matches a string with two uppercase alphanumeric segments (including _ or -) separated by slashes, followed by /EC002I and exactly six digits.
+
+
+The destination path cannot be /; copying secrets directly to the root destination is not allowed.
+
+For KV secrets, copying is permitted only between identical types: secret → secret, cloud → cloud, or objsto → objsto.
+
+Any other combination different from these three is strictly forbidden.
