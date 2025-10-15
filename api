@@ -87,3 +87,9 @@ class Migration(Resource):
 
         # ✅ If all validations pass
         return {"message": "Validation successful. Ready to proceed with migration."}, 200
+
+^\/(?:[^\/\s]+\/)*[^\/\s]*\/?$ — Matches a path that starts with /, may include subpaths separated by single slashes, has no whitespace or consecutive slashes, and can optionally end with a slash.
+
+^(?!\/$)\/(?:[^\/\s]+\/)*[^\/\s]*\/?$ — Same as above, but disallows the string / alone (so it can’t be just the root path).
+
+^[0-9A-Z_-]+/[0-9A-Z_-]+/EC002I[0-9]{6}$ — Matches a string with two uppercase alphanumeric segments (including _ or -) separated by slashes, followed by /EC002I and exactly six digits.
